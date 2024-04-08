@@ -75,9 +75,9 @@ static void example_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const u
          * encrypted as peer-to-peer message or unencrypted over the broadcast channel.
          * Users can check the destination address to distinguish it.
          */
-        ESP_LOGD(TAG, "Receive broadcast ESPNOW data");
+        ESP_LOGI(TAG, "Receive broadcast ESPNOW data");
     } else {
-        ESP_LOGD(TAG, "Receive unicast ESPNOW data");
+        ESP_LOGI(TAG, "Receive unicast ESPNOW data");
     }
 
     evt.id = EXAMPLE_ESPNOW_RECV_CB;
@@ -214,7 +214,7 @@ static void example_espnow_task(void *pvParameter)
     /* Start sending broadcast ESPNOW data. */
     example_espnow_send_param_t *send_param = (example_espnow_send_param_t *)pvParameter;
     // 使用ESP_LOGI打印 sendParam
-    ESP_LOGI(TAG, "send data to "MACSTR"", MAC2STR(send_param->dest_mac));
+    ESP_LOGI(TAG, "1 send data to "MACSTR"", MAC2STR(send_param->dest_mac));
     ESP_LOGI(TAG, "send_param->unicast: %d", send_param->unicast);
     ESP_LOGI(TAG, "send_param->broadcast: %d", send_param->broadcast);
     ESP_LOGI(TAG, "send_param->state: %d", send_param->state);
@@ -233,7 +233,7 @@ static void example_espnow_task(void *pvParameter)
                 example_espnow_event_send_cb_t *send_cb = &evt.info.send_cb;
                 is_broadcast = IS_BROADCAST_ADDR(send_cb->mac_addr);
 
-                ESP_LOGD(TAG, "Send data to "MACSTR", status1: %d", MAC2STR(send_cb->mac_addr), send_cb->status);
+                ESP_LOGI(TAG, "Send data to "MACSTR", status1: %d", MAC2STR(send_cb->mac_addr), send_cb->status);
 
                 if (is_broadcast && (send_param->broadcast == false)) {
                     break;
@@ -253,7 +253,7 @@ static void example_espnow_task(void *pvParameter)
                     vTaskDelay(send_param->delay/portTICK_PERIOD_MS);
                 }
 
-                ESP_LOGI(TAG, "send data to "MACSTR"", MAC2STR(send_cb->mac_addr));
+                ESP_LOGI(TAG, "2 send data to "MACSTR"", MAC2STR(send_cb->mac_addr));
 
                 memcpy(send_param->dest_mac, send_cb->mac_addr, ESP_NOW_ETH_ALEN);
                 example_espnow_data_prepare(send_param);
@@ -309,7 +309,7 @@ static void example_espnow_task(void *pvParameter)
                          */
                         if (send_param->unicast == false && send_param->magic >= recv_magic) {
                     	    ESP_LOGI(TAG, "Start sending unicast data");
-                    	    ESP_LOGI(TAG, "send data to "MACSTR"", MAC2STR(recv_cb->mac_addr));
+                    	    ESP_LOGI(TAG, "3 send data to "MACSTR"", MAC2STR(recv_cb->mac_addr));
 
                     	    /* Start sending unicast ESPNOW data. */
                             memcpy(send_param->dest_mac, recv_cb->mac_addr, ESP_NOW_ETH_ALEN);
