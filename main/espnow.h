@@ -6,6 +6,15 @@
 #include <string.h>
 #include "esp_now.h"
 
+/* ESPNOW can work in both station and softap mode. It is configured in menuconfig. */
+#if CONFIG_ESPNOW_WIFI_MODE_STATION
+#define ESPNOW_WIFI_MODE WIFI_MODE_STA
+#define ESPNOW_WIFI_IF   ESP_IF_WIFI_STA
+#else
+#define ESPNOW_WIFI_MODE WIFI_MODE_AP
+#define ESPNOW_WIFI_IF   ESP_IF_WIFI_AP
+#endif
+
 #define ESPNOW_QUEUE_SIZE  6 
 #define ESPNOW_WIFI_MODE WIFI_MODE_AP
 #define ESPNOW_WIFI_IF   ESP_IF_WIFI_AP
@@ -60,11 +69,24 @@ typedef struct {
     uint8_t dest_mac[ESP_NOW_ETH_ALEN];   //MAC address of destination device.
 } example_espnow_send_param_t;
 
+/* User defined field of ESPNOW data in this example. */
+typedef struct {
+    uint8_t type;                         //Broadcast or unicast ESPNOW data.
+    uint8_t state;                        //Indicate that if has received broadcast ESPNOW data or not.
+    uint16_t seq_num;                     //Sequence number of ESPNOW data.
+    uint16_t crc;                         //CRC16 value of ESPNOW data.
+    uint32_t magic;                       //Magic number which is used to determine which device to send unicast ESPNOW data.
+    uint8_t payload[0];                   //Real payload of ESPNOW data.
+} __attribute__((packed)) example_espnow_data_t;
+
 static void wifi_init(void);
 static void example_espnow_send_cb(const uint8_t *mac_addr, esp_now_send_status_t status);
 static void example_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, int len);
-static void espnow_init(void);
 void example_espnow_data_prepare(example_espnow_send_param_t *send_param);
-void espnow_init(void);
+static void example_espnow_task(void *pvParameter);
+static esp_err_t espnow_init(void);
+int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, uint16_t *seq, int *magic);
+static void example_espnow_deinit(example_espnow_send_param_t *send_param);
+void espnow_global_init(void);
 
 #endif

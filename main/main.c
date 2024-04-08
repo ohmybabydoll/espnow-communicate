@@ -4,5 +4,5 @@
 
 void app_main(void)
 {
-    espnow_init();
+    espnow_global_init();
 }
