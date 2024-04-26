@@ -109,15 +109,14 @@ static void example_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const u
     {
 
         int payload_len = len - sizeof(esp_now_data_packet);
+        int len_16bit = ESPNOW_DATA_SIZE / 2;
         // 将recv_data->data转为16bit数据
-        for (int i = 0; i < ESPNOW_DATA_SIZE; i++)
+        for (int i = 0; i < len_16bit; i++)
         {
-            recive_16bit[i] = (data[i] - 128) << 5;
-            output_16bit[i * 2] = recive_16bit[i];
-            output_16bit[i * 2 + 1] = recive_16bit[i];
+            output_16bit[i] = (recv_data->data[i * 2] << 8) | recv_data->data[i * 2 + 1];
         }
 
-        if (!i2s_write_max98357(output_16bit, ESPNOW_DATA_SIZE))
+        if (!i2s_write_max98357(output_16bit, len_16bit))
         {
             ESP_LOGE(TAG, "i2s write failed");
         }
@@ -303,22 +302,22 @@ void test_send_sine_wave(void)
     int count = 782;
     while (1)
     {
-        while (count > 0)
+        if (gpio_get_level(GPIO_INPUT_PIN) != 0)
         {
-            while (!send_over)
-            {
-                vTaskDelay(pdMS_TO_TICKS(1));
-            }
-            count--;
-            send_over = false;
-            esp_err_t err_t = esp_now_send(peer_uni.peer_addr, send_data, send_len);
-            if (err_t != ESP_OK)
-            {
-                ESP_LOGE(TAG, "Send error to " MACSTR ", err_t: %d", MAC2STR(peer_uni.peer_addr), err_t);
-            }
+            vTaskDelay(pdMS_TO_TICKS(10));
+            continue;
         }
-        count = 782;
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        while (!send_over)
+        {
+            vTaskDelay(pdMS_TO_TICKS(1));
+        }
+        count--;
+        send_over = false;
+        esp_err_t err_t = esp_now_send(peer_uni.peer_addr, send_data, send_len);
+        if (err_t != ESP_OK)
+        {
+            ESP_LOGE(TAG, "Send error to " MACSTR ", err_t: %d", MAC2STR(peer_uni.peer_addr), err_t);
+        }
     }
     free(send_data);
 }
@@ -338,7 +337,7 @@ void espnow_global_init(void)
     ESP_ERROR_CHECK(init_broadcast_send_data());
     ESP_ERROR_CHECK(auto_peer());
     recive_16bit = (uint16_t *)malloc(sizeof(uint16_t) * ESPNOW_DATA_SIZE);
-    output_16bit = (uint16_t *)malloc(2 * sizeof(uint16_t) * ESPNOW_DATA_SIZE);
+    output_16bit = (uint16_t *)malloc(sizeof(uint16_t) * ESPNOW_DATA_SIZE / 2);
 
     // Check if memory allocation was successful
     if (recive_16bit == NULL || output_16bit == NULL)
